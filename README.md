@@ -8,7 +8,7 @@ Lazy load fonts, with JSON Built around how [Fountain](https://fountain.nymarkty
 
 - Preloads `[data-font-load=“eager”]` and lazy loads `[data-font-load=“lazy”]`
 - `data-requires-all-weights=“true”` loads all fonts from custom element `<font-style>` on focus/click. *I’m making a config for this*
-- Adds `.fonts-loaded` and `.font-loaded`. *I’m making a config for this*
+- Adds classes for loaded font and loaded fonts.
 
 
 ## Usage
