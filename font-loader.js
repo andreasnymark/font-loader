@@ -8,11 +8,10 @@
 		fontLoadedClass: 'font-loaded',
 		rootMargin: '300px',
 		threshold: 0,
-		metaDataSelector: '#font-metadata',
+		metadataSelector: '#font-metadata',
 	};
 
-	// Load font metadata from JSON
-	const metadataElement = document.querySelector( config.metaDataSelector );
+	const metadataElement = document.querySelector( config.metadataSelector );
 	if ( ! metadataElement ) {
 		console.warn( 'font-metadata element not found, font loading disabled' );
 		return;
@@ -26,19 +25,17 @@
 		return;
 	}
 
-	// Track what's already loaded
 	const loadedFonts = new Set();
 	const loadedFontTesters = new WeakSet();
 	const fontLoadPromises = new Map();
 
-	// Helper: Load a single font
 	function loadFont( fontFamily ) {
 		if ( loadedFonts.has( fontFamily )) {
 			return fontLoadPromises.get( fontFamily ) || Promise.resolve();
 		}
 
 		const fontData = fontMetadata[ fontFamily ];
-		if (!fontData ) {
+		if ( ! fontData ) {
 			console.warn( 'Font not found:', fontFamily );
 			return Promise.resolve();
 		}
@@ -64,7 +61,6 @@
 		return promise;
 	}
 
-	// Helper: Load all fonts for font-tester
 	function loadAllFontsForTester( fontTester ) {
 		if ( loadedFontTesters.has( fontTester ) ) {
 			return Promise.resolve();
@@ -75,67 +71,115 @@
 			.map( el => el.getAttribute( 'family' ))
 			.filter( Boolean );
 
-		console.log( 'Loading all weights for font-tester:', families );
-
-		const promises = families.map( family => loadFont( family ));
-
-		return Promise.all( promises ).then(() => {
-			loadedFontTesters.add( fontTester );
-			fontTester.classList.add( 'fonts-loaded' );
-		});
+		// Just mark as loaded - browser handles fonts via @font-face
+		loadedFontTesters.add( fontTester );
+		fontTester.classList.add( config.fontsLoadedClass );
+		return Promise.resolve();
 	}
 
-	// 1. VIEWPORT OBSERVER: Load fonts as previews scroll into view
 	const previewObserver = new IntersectionObserver(
 		( entries ) => {
-		entries.forEach( entry => {
-			if ( entry.isIntersecting ) {
-				const preview = entry.target;
-				const fontFamily = preview.dataset.fontFamily;
+			entries.forEach( entry => {
+				if ( entry.isIntersecting ) {
+					const preview = entry.target;
+					const fontFamily = preview.dataset.fontFamily;
 
-				if ( fontFamily ) {
-					loadFont( fontFamily ).then(() => {
-						preview.classList.add( 'font-loaded' );
-					} );
+					if ( fontFamily ) {
+						preview.classList.add( config.fontLoadedClass );
+					}
+
+					previewObserver.unobserve( preview );
 				}
-
-				previewObserver.unobserve( preview );
-			}
-		} );
+			} );
 		},{
 			rootMargin: config.rootMargin,
 			threshold: config.threshold
 		}
 	);
 
+	const visibleLazyTesters = new WeakSet();
+	const initializedLazyTesters = new WeakSet();
+	const fontTesterCurrentFont = new WeakMap();
+
+	const fontTesterObserver = new IntersectionObserver(
+		( entries ) => {
+			entries.forEach( entry => {
+				if ( entry.isIntersecting ) {
+					visibleLazyTesters.add( entry.target );
+
+					if ( ! initializedLazyTesters.has( entry.target ) ) {
+						initializedLazyTesters.add( entry.target );
+
+						const fontFamily = entry.target.getAttribute( 'font-family' );
+
+						if ( fontFamily ) {
+							const currentFont = fontTesterCurrentFont.get( entry.target );
+							if ( currentFont === fontFamily ) {
+								return;
+							}
+
+							const fontDisplay = entry.target.shadowRoot?.querySelector( 'font-display' );
+							if ( fontDisplay ) {
+								fontDisplay.style.setProperty( '--font-family', fontFamily );
+								fontTesterCurrentFont.set( entry.target, fontFamily );
+							}
+						}
+					}
+				}
+			});
+		},
+		{
+			rootMargin: config.rootMargin,
+			threshold: config.threshold
+		}
+	);
+
 	document.addEventListener( 'click', ( e ) => {
-		// Skip if clicking on select elements to avoid closing them during font load
-		if ( e.target.tagName === 'SELECT' || e.target.closest( 'select' ) ) {
+		if ( e.target.closest( 'select' ) ) {
 			return;
 		}
 
 		const fontTester = e.target.closest( 'font-tester' );
-		if ( fontTester && fontTester.dataset.requiresAllWeights === 'true' ) {
+		if ( fontTester?.dataset.requiresAllWeights === 'true' ) {
 			loadAllFontsForTester( fontTester );
 		}
 	}, true );
 
-	// Listen for focus events ( dropdowns, inputs )
 	document.addEventListener( 'focus', ( e ) => {
-		// Skip if focusing on select elements to avoid closing them during font load
-		if ( e.target.tagName === 'SELECT' || e.target.closest( 'select' ) ) {
+		if ( e.target.closest( 'select' ) ) {
 			return;
 		}
 
 		const fontTester = e.target.closest( 'font-tester' );
-		if ( fontTester && fontTester.dataset.requiresAllWeights === 'true' ) {
+		if ( fontTester?.dataset.requiresAllWeights === 'true' ) {
 			loadAllFontsForTester( fontTester );
 		}
 	}, true );
 
-	// 3. INITIALIZE: Observe all previews
+	document.addEventListener( 'style-change', ( e ) => {
+		if ( e.detail.property !== 'fontFamily' ) return;
+
+		const fontTester = e.target.closest( 'font-tester' );
+		if ( ! fontTester ) return;
+		if ( fontTester.dataset.requiresAllWeights === 'true' ) return;
+
+		if ( ! initializedLazyTesters.has( fontTester ) ) {
+			return;
+		}
+
+		const currentFont = fontTesterCurrentFont.get( fontTester );
+		if ( currentFont === e.detail.value ) {
+			return;
+		}
+
+		const fontDisplay = fontTester.shadowRoot?.querySelector( 'font-display' );
+		if ( fontDisplay && e.detail.value ) {
+			fontDisplay.style.setProperty( '--font-family', e.detail.value );
+			fontTesterCurrentFont.set( fontTester, e.detail.value );
+		}
+	}, true );
+
 	function init() {
-		// eager previews: already preloaded, just mark them
 		document.querySelectorAll( config.eagerSelector ).forEach( preview => {
 			const fontFamily = preview.dataset.fontFamily;
 			if ( fontFamily ) {
@@ -148,14 +192,11 @@
 			previewObserver.observe( preview );
 		});
 
-		// TODO: Remove in prod
-		console.log( 'Font loading initialized:', {
-			totalFonts: Object.keys( fontMetadata ).length,
-			preloadedFonts: loadedFonts.size
-		} );
+		document.querySelectorAll( 'font-tester' ).forEach( tester => {
+			fontTesterObserver.observe( tester );
+		});
 	}
 
-	// Start when DOM is ready
 	if ( document.readyState === 'loading' ) {
 		document.addEventListener( 'DOMContentLoaded', init );
 	} else {
