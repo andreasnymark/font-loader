@@ -4,12 +4,15 @@
 	const config = {
 		eagerSelector: '[data-font-load="eager"]',
 		lazySelector: '[data-font-load="lazy"]',
+		fontsLoadedClass: 'fonts-loaded',
+		fontLoadedClass: 'font-loaded',
 		rootMargin: '300px',
-		threshold: 0
+		threshold: 0,
+		metaDataSelector: '#font-metadata',
 	};
 
 	// Load font metadata from JSON
-	const metadataElement = document.getElementById( 'font-metadata' );
+	const metadataElement = document.querySelector( config.metaDataSelector );
 	if ( ! metadataElement ) {
 		console.warn( 'font-metadata element not found, font loading disabled' );
 		return;
@@ -134,11 +137,11 @@
 	function init() {
 		// eager previews: already preloaded, just mark them
 		document.querySelectorAll( config.eagerSelector ).forEach( preview => {
-		const fontFamily = preview.dataset.fontFamily;
-		if ( fontFamily ) {
-			loadedFonts.add( fontFamily ); // Mark as already loaded
-			preview.classList.add( 'font-loaded' );
-		}
+			const fontFamily = preview.dataset.fontFamily;
+			if ( fontFamily ) {
+				loadedFonts.add( fontFamily ); // Mark as already loaded
+				preview.classList.add( config.fontsLoadedClass );
+			}
 		});
 
 		document.querySelectorAll( config.lazySelector ).forEach( preview => {
