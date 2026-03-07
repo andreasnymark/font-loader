@@ -54,8 +54,7 @@ Font data is provided via a JSON script element. Each key corresponds to the val
 		"spacegrotesk-bold": {
 			"name": "Space Grotesk Bold",
 			"family": "spacegroteskbold",
-			"weightValue": "700",
-			"weightName": "Bold",
+			"weight": "700",
 			"style": "normal",
 			"url": "https://…/space-grotesk-bold.woff2"
 		}
@@ -67,10 +66,31 @@ Font data is provided via a JSON script element. Each key corresponds to the val
 |-------|-------------|
 | `name` | Human-readable font name |
 | `family` | Font family name registered with the FontFace API |
-| `weightValue` | Numeric weight (`100`–`900`) |
-| `weightName` | Human-readable weight name |
-| `style` | `normal` or `italic` |
+| `weight` | Weight value (`100`–`900`). Defaults to `normal` if omitted |
+| `style` | `normal` or `italic`. Defaults to `normal` if omitted |
+| `stretch` | Width value (e.g. `75%`). Defaults to `normal` if omitted |
 | `url` | URL to the `.woff2` file |
+
+### Variable fonts
+
+For variable fonts, `weight`, `style`, and `stretch` accept range values. The browser uses these to match the font when CSS requests a value within the range.
+
+```html
+<script id="font-metadata" type="application/json">
+	{
+		"myfont-variable": {
+			"name": "My Variable Font",
+			"family": "myfont",
+			"weight": "100 900",
+			"style": "normal",
+			"stretch": "75% 125%",
+			"url": "https://…/myfont-variable.woff2"
+		}
+	}
+</script>
+```
+
+Custom axis values (`font-variation-settings`) are applied via CSS on the elements — they are outside the scope of the loader.
 
 ## Configuration
 

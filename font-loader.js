@@ -47,8 +47,9 @@ export function loadFont( fontFamily ) {
 		fontData.family,
 		`url(${fontData.url})`,
 		{
-			weight: fontData.weightValue,
+			weight: fontData.weight || 'normal',
 			style: fontData.style || 'normal',
+			stretch: fontData.stretch || 'normal',
 		}
 	)
 	.load()
