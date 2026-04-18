@@ -2,7 +2,7 @@
  * Lazy load fonts using the FontFace API and IntersectionObserver.
  * @author Andreas Nymark <andreas@nymark.co>
  * @license MIT
- * @version 1.0.0
+ * @version 1.1.0
  * @link https://github.com/andreasnymark/font-loader
  */
 
@@ -14,6 +14,7 @@ export const config = Object.assign( {
 	fontLoadedClass: 'font-loaded',
 	rootMargin: '300px',
 	threshold: 0,
+	applyFont: false,
 }, window.FontLoaderConfig || {} );
 
 const metadataElement = document.querySelector( config.metadataSelector );
@@ -74,6 +75,7 @@ const previewObserver = new IntersectionObserver(
 				if ( fontFamily ) {
 					loadFont( fontFamily ).then( () => {
 						preview.classList.add( config.fontLoadedClass );
+						if ( config.applyFont ) preview.style.fontFamily = `'${fontFamily}'`;
 					});
 				}
 
@@ -92,6 +94,7 @@ function init() {
 		if ( fontFamily ) {
 			loadFont( fontFamily ).then( () => {
 				preview.classList.add( config.fontsLoadedClass );
+				if ( config.applyFont ) preview.style.fontFamily = `'${fontFamily}'`;
 			});
 		}
 	});

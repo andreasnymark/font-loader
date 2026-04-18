@@ -115,6 +115,7 @@ Override defaults via a global `window.FontLoaderConfig` object, set before load
 | `rootMargin` | `300px` | IntersectionObserver root margin |
 | `threshold` | `0` | IntersectionObserver threshold |
 | `metadataSelector` | `#font-metadata` | Selector for the JSON metadata script element |
+| `applyFont` | `false` | Apply `font-family` as inline style on the element after load |
 
 ## font-tester integration
 
