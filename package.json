@@ -1,0 +1,12 @@
+{
+  "name": "font-loader",
+  "version": "1.1.0",
+  "type": "module",
+  "scripts": {
+    "build": "esbuild font-loader.js --bundle=false --minify --outfile=font-loader.min.js",
+    "watch": "esbuild font-loader.js --bundle=false --minify --outfile=font-loader.min.js --watch"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0"
+  }
+}
