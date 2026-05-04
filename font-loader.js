@@ -2,7 +2,7 @@
  * Lazy load fonts using the FontFace API and IntersectionObserver.
  * @author Andreas Nymark <andreas@nymark.co>
  * @license MIT
- * @version 1.2.0
+ * @version 1.2.1
  * @link https://github.com/andreasnymark/font-loader
  */
 
@@ -48,7 +48,7 @@ export function loadFont( fontFamily ) {
 		fontData.family,
 		`url(${fontData.url})`,
 		{
-			weight: fontData.weight || 'normal',
+			weight: fontData.weightValue || 'normal',
 			style: fontData.style || 'normal',
 			stretch: fontData.stretch || 'normal',
 		}
@@ -73,9 +73,12 @@ const previewObserver = new IntersectionObserver(
 				const fontFamily = preview.dataset.fontFamily;
 
 				if ( fontFamily ) {
+					const fontData = fontMetadata[ fontFamily ];
+					preview.style.fontStyle = fontData?.style || 'normal';
+					preview.style.fontWeight = fontData?.weightValue || 'normal';
 					loadFont( fontFamily ).then( () => {
 						preview.classList.add( config.fontLoadedClass );
-						if ( config.applyFont ) preview.style.fontFamily = `'${fontFamily}'`;
+						if ( config.applyFont ) preview.style.fontFamily = `'${fontData?.family}'`;
 					});
 				}
 
@@ -92,9 +95,12 @@ function init() {
 	document.querySelectorAll( config.eagerSelector ).forEach( preview => {
 		const fontFamily = preview.dataset.fontFamily;
 		if ( fontFamily ) {
+			const fontData = fontMetadata[ fontFamily ];
+			preview.style.fontStyle = fontData?.style || 'normal';
+			preview.style.fontWeight = fontData?.weightValue || 'normal';
 			loadFont( fontFamily ).then( () => {
 				preview.classList.add( config.fontsLoadedClass );
-				if ( config.applyFont ) preview.style.fontFamily = `'${fontFamily}'`;
+				if ( config.applyFont ) preview.style.fontFamily = `'${fontData?.family}'`;
 			});
 		}
 	});
