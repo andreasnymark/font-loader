@@ -2,7 +2,7 @@
  * Lazy load fonts using the FontFace API and IntersectionObserver.
  * @author Andreas Nymark <andreas@nymark.co>
  * @license MIT
- * @version 1.2.1
+ * @version 1.3.0
  * @link https://github.com/andreasnymark/font-loader
  */
 
@@ -10,8 +10,9 @@ export const config = Object.assign( {
 	eagerSelector: '[data-font-load="eager"]',
 	lazySelector: '[data-font-load="lazy"]',
 	metadataSelector: '#font-metadata',
-	fontsLoadedClass: 'fonts-loaded',
 	fontLoadedClass: 'font-loaded',
+	fontLoadingClass: 'font-loading',
+	fontLoadingDelay: 300,
 	rootMargin: '300px',
 	threshold: 0,
 	applyFont: false,
@@ -33,6 +34,20 @@ if ( metadataElement ) {
 
 const fontLoadPromises = new Map();
 
+// Delay adding the loading class so fast connections don't get a flash of it
+export function trackLoadingClass( preview, promise, extraLoadedClasses = [] ) {
+	preview.classList.remove( config.fontLoadedClass, ...extraLoadedClasses );
+
+	const timeoutId = setTimeout( () => {
+		preview.classList.add( config.fontLoadingClass );
+	}, config.fontLoadingDelay );
+
+	promise.finally( () => {
+		clearTimeout( timeoutId );
+		preview.classList.remove( config.fontLoadingClass );
+	});
+}
+
 export function loadFont( fontFamily ) {
 	if ( fontLoadPromises.has( fontFamily ) ) {
 		return fontLoadPromises.get( fontFamily );
@@ -44,20 +59,29 @@ export function loadFont( fontFamily ) {
 		return Promise.resolve();
 	}
 
-	const promise = new FontFace(
+	const fontFace = new FontFace(
 		fontData.family,
 		`url(${fontData.url})`,
 		{
 			weight: fontData.weightValue || 'normal',
 			style: fontData.style || 'normal',
 			stretch: fontData.stretch || 'normal',
+			display: 'block',
 		}
-	)
-	.load()
-	.then( loadedFace => {
-		document.fonts.add( loadedFace );
+	);
+
+	// Add before loading so FontFaceSet events (loadingdone) fire on completion
+	document.fonts.add( fontFace );
+
+	const promise = fontFace.load()
+	.then( () => {
+		// FontFaceSet loadingdone is unreliable in WebKit; consumers listen for this instead
+		document.dispatchEvent( new CustomEvent( 'font-loaded', {
+			detail: { fontFamily, family: fontData.family }
+		} ) );
 	})
 	.catch( err => {
+		document.fonts.delete( fontFace );
 		console.error( 'Failed to load font:', fontData.name, err );
 	});
 
@@ -76,7 +100,9 @@ const previewObserver = new IntersectionObserver(
 					const fontData = fontMetadata[ fontFamily ];
 					preview.style.fontStyle = fontData?.style || 'normal';
 					preview.style.fontWeight = fontData?.weightValue || 'normal';
-					loadFont( fontFamily ).then( () => {
+					const promise = loadFont( fontFamily );
+					trackLoadingClass( preview, promise );
+					promise.then( () => {
 						preview.classList.add( config.fontLoadedClass );
 						if ( config.applyFont ) preview.style.fontFamily = `'${fontData?.family}'`;
 					});
@@ -98,8 +124,10 @@ function init() {
 			const fontData = fontMetadata[ fontFamily ];
 			preview.style.fontStyle = fontData?.style || 'normal';
 			preview.style.fontWeight = fontData?.weightValue || 'normal';
-			loadFont( fontFamily ).then( () => {
-				preview.classList.add( config.fontsLoadedClass );
+			const promise = loadFont( fontFamily );
+			trackLoadingClass( preview, promise );
+			promise.then( () => {
+				preview.classList.add( config.fontLoadedClass );
 				if ( config.applyFont ) preview.style.fontFamily = `'${fontData?.family}'`;
 			});
 		}

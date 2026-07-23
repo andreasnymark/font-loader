@@ -100,7 +100,7 @@ Override defaults via a global `window.FontLoaderConfig` object, set before load
 <script>
     window.FontLoaderConfig = {
         rootMargin: '500px',
-        fontsLoadedClass: 'my-fonts-loaded'
+        fontLoadedClass: 'my-font-loaded'
     };
 </script>
 <script src="font-loader.js" type="module"></script>
@@ -110,8 +110,9 @@ Override defaults via a global `window.FontLoaderConfig` object, set before load
 |-----|---------|-------------|
 | `eagerSelector` | `[data-font-load="eager"]` | Elements to load immediately |
 | `lazySelector` | `[data-font-load="lazy"]` | Elements to lazy load |
-| `fontsLoadedClass` | `fonts-loaded` | Class added when all fonts are loaded |
 | `fontLoadedClass` | `font-loaded` | Class added to a lazy element on load |
+| `fontLoadingClass` | `font-loading` | Class added when font is loading.  |
+| `fontLoadingDelay` | `300` | Milliseconds delay before adding `fontLoadingClass` to avoid flash |
 | `rootMargin` | `300px` | IntersectionObserver root margin |
 | `threshold` | `0` | IntersectionObserver threshold |
 | `metadataSelector` | `#font-metadata` | Selector for the JSON metadata script element |
